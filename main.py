@@ -45,32 +45,33 @@ class CodeSmellDetectorRefactor:
 
     def perform_code_smell_analysis(self):
         try:
-            lines, params, long_function_names = analyze_file(self.file_path)
+            params, long_function = analyze_file(self.file_path)
             exact_duplicates, semantic_duplicates = detect_duplicates(self.file_path)
 
             code_smells = []
 
-            if lines > LONG_FUNCTION_THRESHOLD:
-                code_smells.append("Code Smell: Long Method/Function")
-            if long_function_names:
-                code_smells.append("Code Smell: Long Function Name")
+            if long_function:
+                code_smells.append(("Code Smell: Long Method/Function", long_function))
             if params:
-                code_smells.append("Code Smell: Long Parameter List")
+                code_smells.append(("Code Smell: Long Parameter List", params))
             if exact_duplicates:
-                code_smells.append("Code Smell: Exact Duplicated Code")
+                code_smells.append(("Code Smell: Exact Duplicate Code Detected", None))
             if semantic_duplicates:
-                code_smells.append("Code Smell: Semantic Duplicated Code")
+                code_smells.append(("Code Smell: Semantic Duplicated Code", None))
 
             if not code_smells:
-                code_smells.append("No code smells detected.")
+                code_smells.append(("No code smells detected.", None))
 
             self.master.after(0, self.update_code_smell_results, code_smells)
         except Exception as e:
             self.master.after(0, self.update_code_smell_results, [f"Failed to analyze code smells: {e}"])
 
     def update_code_smell_results(self, code_smells):
-        for smell in code_smells:
-            self.text_output.insert(tk.END, smell + "\n")
+        for smell, function_names in code_smells:
+            self.text_output.insert(tk.END, f"{smell}\n")
+            if function_names:
+                for func_name in function_names:
+                    self.text_output.insert(tk.END, f"\tFunction with Code Smell: {func_name}\n")
 
     def refactor_code(self):
         if not hasattr(self, 'file_path'):
@@ -80,6 +81,7 @@ class CodeSmellDetectorRefactor:
         try:
             confirmation = messagebox.askyesno("Refactor Code", "Do you want to refactor the code?")
             if not confirmation:
+                messagebox.showinfo("", "Refactoring Cancelled")
                 return
 
             content, tree = read_and_parse(self.file_path)
@@ -101,20 +103,18 @@ def analyze_file(file_path):
         content = file.read()
 
     tree = ast.parse(content)
-    max_function_lines = 0
-    long_function_names = []
-    params = False
+    long_function = []
+    long_parameter_functions = []
 
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
             function_lines = len(ast.unparse(node).splitlines())
-            max_function_lines = max(max_function_lines, function_lines)
             if len(node.args.args) > LONG_PARAMETER_THRESHOLD:
-                params = True
-            if len(node.name) > LONG_FUNCTION_THRESHOLD:  # Adjust the threshold as needed
-                long_function_names.append(node.name)
+                long_parameter_functions.append(node.name)
+            if function_lines > LONG_FUNCTION_THRESHOLD:  # Adjust the threshold as needed
+                long_function.append(node.name)
 
-    return max_function_lines, params, long_function_names
+    return long_parameter_functions, long_function
 
 
 def jaccard_similarity(set1, set2):
