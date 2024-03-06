@@ -184,7 +184,7 @@ def remove_duplicate_functions(content, duplicate_names, exact_duplicates):
             content = content.replace(code, '', 1)
 
     for name in duplicate_names:
-        content = content.replace(name + '(', exact_duplicates[0][0] + '(', 1)
+        content = content.replace(duplicate_names[0] + '(', exact_duplicates[0][0] + '(')
     return content
 
 
