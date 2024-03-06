@@ -187,7 +187,6 @@ def remove_duplicate_functions(content, duplicate_names, exact_duplicates):
 
 
 def write_refactored_file(original_file_path, content):
-    """Writes the refactored content to a new file."""
     refactored_file_path = original_file_path.replace('.py', '_refactored.py')
     with open(refactored_file_path, 'w') as refactored_file:
         refactored_file.write(content)
