@@ -88,12 +88,14 @@ class CodeSmellDetectorRefactor:
             functions = extract_functions(tree)
 
             exact_duplicates = find_exact_duplicates(functions)
-            duplicate_names = [dup[1] for dup in exact_duplicates]
+            if exact_duplicates:
+                duplicate_names = [dup[1] for dup in exact_duplicates]
+                content = remove_duplicate_functions(content, duplicate_names, exact_duplicates)
+                refactored_file_path = write_refactored_file(self.file_path, content)
+                messagebox.showinfo("Refactoring Complete", f"Refactored file created: {refactored_file_path}")
+            else:
+                messagebox.showinfo("No Refactoring", "No Duplicates found")
 
-            content = remove_duplicate_functions(content, duplicate_names, exact_duplicates)
-            refactored_file_path = write_refactored_file(self.file_path, content)
-
-            messagebox.showinfo("Refactoring Complete", f"Refactored file created: {refactored_file_path}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to refactor code: {e}")
 
